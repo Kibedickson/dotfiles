@@ -6,33 +6,22 @@ alias mfs='php artisan migrate:fresh --seed'
 
 alias mysql='mysql -u root -p'
 
-alias gaa='git add .'
-
-alias cm='make commit'
-
-alias gs='git status'
-
-alias brightness='sudo su -c "echo 20 >/sys/class/backlight/intel_backlight/brightness"'
-
-alias bref-cli='vendor/bin/bref cli hrms-staging-artisan -r eu-west-1'
-
-alias work='cd ~/Code/Work'
-
-alias personal='cd ~/Code/Personal/Projects'
+alias work='cd ~/Work/projects/'
 
 mkcd() {
 	mkdir "$1"
 	cd "$1"
 }
 
-alias dns='make dns'
+#git
+alias gs='git status'
+alias gaa='git add .'
+alias pull='git pull'
+alias push='git push'
+alias push-all='git push origin main && git push origin develop && git push --tags'
 
-alias cl='clear'
+alias vim='nvim'
 
-alias dep='vendor/bin/dep'
-
-alias fj='functional-javascript-workshop'
-
-alias verify='fj verify'
-
-alias run='fj run'
+export EDITOR="nvim"
+# Editor used by CLI
+export SUDO_EDITOR="$EDITOR"
