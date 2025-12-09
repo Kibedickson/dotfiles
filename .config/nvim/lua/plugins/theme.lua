@@ -1,1 +1,0 @@
-/home/dickson/.config/omarchy/current/theme/neovim.lua

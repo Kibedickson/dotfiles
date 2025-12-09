@@ -1,0 +1,33 @@
+bcrypt(12345678)
+exit
+(bool) false
+(bool) true
+(bool) "true"
+(bool) "false"
+(bool) null
+filter_var(true, FILTER_VALIDATE_BOOLEAN)
+filter_var(false, FILTER_VALIDATE_BOOLEAN)
+filter_var("false", FILTER_VALIDATE_BOOLEAN)
+filter_var("true", FILTER_VALIDATE_BOOLEAN)
+exit
+ShiftCategory::cases();
+App\Enums\ShiftCategory::cases();
+App\Enums\Attendance\ShiftCategory::cases();
+$cat = App\Enums\Attendance\ShiftCategory::cases();
+$cat = App\Enums\Attendance\ShiftCategory::cases();
+foreach($cat as $shift) { $shift;}
+foreach($cat as $shift) { $shift->value;}
+foreach($cat as $shift) { echo $shift->value;}
+edit
+$cats = App\Enums\Attendance\ShiftCategory::cases();
+
+$array = [];
+
+isset($array['test']);
+
+$array
+$array['test'] = 0;
+$array
+++$array['test']
+$array
+exit

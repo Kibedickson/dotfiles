@@ -6,11 +6,13 @@ alias mfs='php artisan migrate:fresh --seed'
 
 alias mysql='mysql -u root -p'
 
-alias work='cd ~/Work/projects/'
+alias work='cd ~/Workspace/11degrees/'
+alias api='cd ~/Workspace/11degrees/winguhr-api'
+alias frontend='cd ~/Workspace/11degrees/winguhr-frontend'
 
 mkcd() {
-	mkdir "$1"
-	cd "$1"
+  mkdir "$1"
+  cd "$1"
 }
 
 #git
