@@ -21,7 +21,7 @@ end, { desc = "Run test file" })
 -- PHPStan
 vim.keymap.set("n", "<leader>pp", function()
   local current_file = vim.fn.expand("%:p")
-  vim.cmd("split | terminal ./vendor/bin/phpstan analyse --memory-limiy=1G" .. current_file)
+  vim.cmd("split | terminal ./vendor/bin/phpstan analyse --memory-limit 1G " .. current_file)
 end, { desc = "Run PHPStan on current file" })
 
 -- Rector PHP
