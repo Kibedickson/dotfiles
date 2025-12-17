@@ -17,3 +17,21 @@ end, { desc = "Run nearest test" })
 vim.keymap.set("n", "<leader>tf", function()
   require("neotest").run.run(vim.fn.expand("%"))
 end, { desc = "Run test file" })
+
+-- PHPStan
+vim.keymap.set("n", "<leader>pp", function()
+  local current_file = vim.fn.expand("%:p")
+  vim.cmd("split | terminal ./vendor/bin/phpstan analyse --memory-limiy=1G" .. current_file)
+end, { desc = "Run PHPStan on current file" })
+
+-- Rector PHP
+vim.keymap.set("n", "<leader>pr", function()
+  local current_file = vim.fn.expand("%:p")
+  vim.cmd("split | terminal ./vendor/bin/rector process " .. current_file)
+end, { desc = "Run Rector on current file" })
+
+-- Pest PHP
+vim.keymap.set("n", "<leader>pt", function()
+  local current_file = vim.fn.expand("%:p")
+  vim.cmd("split | terminal ./vendor/bin/pest --compact" .. current_file)
+end, { desc = "Run pest test on current file" })

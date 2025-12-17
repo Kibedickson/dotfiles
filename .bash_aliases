@@ -27,3 +27,5 @@ alias vim='nvim'
 export EDITOR="nvim"
 # Editor used by CLI
 export SUDO_EDITOR="$EDITOR"
+
+alias ls='ls -al'
