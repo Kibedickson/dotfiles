@@ -33,11 +33,11 @@ end, { desc = "Run Rector on current file" })
 -- Pest PHP
 vim.keymap.set("n", "<leader>pt", function()
   local current_file = vim.fn.expand("%:p")
-  vim.cmd("split | terminal ./vendor/bin/pest --compact" .. current_file)
+  vim.cmd("split | terminal ./vendor/bin/pest --compact " .. current_file)
 end, { desc = "Run pest test on current file" })
 
 -- Pint
 vim.keymap.set("n", "<leader>pp", function()
   local current_file = vim.fn.expand("%:p")
-  vim.cmd("split | terminal ./vendor/bin/pint" .. current_file)
+  vim.cmd("split | terminal ./vendor/bin/pint " .. current_file)
 end, { desc = "Run pint on current file" })
