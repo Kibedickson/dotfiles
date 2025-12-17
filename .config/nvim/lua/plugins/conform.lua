@@ -18,7 +18,7 @@ return {
         blade = { "blade-formatter", "rustywind" },
         python = { "black" },
         javascript = { "prettierd" },
-        typesctipt = { "prettierd" },
+        typescript = { "prettierd" },
         vue = { "prettierd" },
         -- rust = { "rustfmt" },
       },
