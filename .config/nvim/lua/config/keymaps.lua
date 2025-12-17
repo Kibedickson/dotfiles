@@ -19,7 +19,7 @@ vim.keymap.set("n", "<leader>tf", function()
 end, { desc = "Run test file" })
 
 -- PHPStan
-vim.keymap.set("n", "<leader>pp", function()
+vim.keymap.set("n", "<leader>ps", function()
   local current_file = vim.fn.expand("%:p")
   vim.cmd("split | terminal ./vendor/bin/phpstan analyse --memory-limit 1G " .. current_file)
 end, { desc = "Run PHPStan on current file" })
@@ -35,3 +35,9 @@ vim.keymap.set("n", "<leader>pt", function()
   local current_file = vim.fn.expand("%:p")
   vim.cmd("split | terminal ./vendor/bin/pest --compact" .. current_file)
 end, { desc = "Run pest test on current file" })
+
+-- Pint
+vim.keymap.set("n", "<leader>pp", function()
+  local current_file = vim.fn.expand("%:p")
+  vim.cmd("split | terminal ./vendor/bin/pint" .. current_file)
+end, { desc = "Run pint on current file" })
