@@ -26,8 +26,10 @@ local function run_php_tool(cmd)
 
   -- Run the command in a terminal buffer
   vim.cmd("terminal " .. cmd .. " " .. vim.fn.shellescape(current_file))
+
   local buf = vim.api.nvim_get_current_buf()
   local win = vim.api.nvim_get_current_win()
+
   -- Set up an autocmd to close the window if the process exits successfully
   vim.api.nvim_create_autocmd("TermClose", {
     buffer = buf,
@@ -36,7 +38,8 @@ local function run_php_tool(cmd)
       -- Capture the status before scheduling
       local exit_code = vim.v.event.status
       if exit_code == 0 then
-        vim.schedule(function()
+        -- Add a 2-second delay before closing
+        vim.defer_fn(function()
           if vim.api.nvim_win_is_valid(win) then
             vim.api.nvim_win_close(win, true)
           end
@@ -44,12 +47,12 @@ local function run_php_tool(cmd)
           if vim.api.nvim_buf_is_valid(buf) then
             vim.api.nvim_buf_delete(buf, { force = true })
           end
-        end)
+        end, 1000)
       end
     end,
   })
 
-  -- Optional: Start in insert mode
+  -- Start in insert mode
   vim.cmd("startinsert")
 end
 
