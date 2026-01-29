@@ -11,6 +11,7 @@ return {
       "prettierd",
       "typescript-language-server",
       "vue-language-server",
+      "black",
     },
   },
 }
