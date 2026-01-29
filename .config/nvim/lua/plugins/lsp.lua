@@ -10,6 +10,15 @@ return {
           "vue",
         },
       },
+      ruff = {
+        init_options = {
+          settings = {
+            lint = {
+              enable = false,
+            },
+          },
+        },
+      },
     },
   },
 }
