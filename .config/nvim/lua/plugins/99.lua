@@ -6,7 +6,7 @@ return {
     local cwd = vim.uv.cwd()
     local basename = vim.fs.basename(cwd)
     _99.setup({
-      model = "github-copilot/claude-opus-4.5",
+      model = "opencode/kimi-k2.5-free",
       logger = {
         level = _99.DEBUG,
         path = "/tmp/" .. basename .. ".99.debug",
