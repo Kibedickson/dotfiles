@@ -28,17 +28,17 @@ return {
 
     vim.keymap.set("n", "<leader>9f", function()
       _99.fill_in_function()
-    end)
+    end, { desc = "99: Fill in function" })
     vim.keymap.set("v", "<leader>9v", function()
       _99.visual()
-    end)
+    end, { desc = "99: Visual selection" })
 
     vim.keymap.set("v", "<leader>9p", function()
       _99.visual_prompt({})
-    end)
+    end, { desc = "99: Visual prompt" })
 
     vim.keymap.set("v", "<leader>9s", function()
       _99.stop_all_requests()
-    end)
+    end, { desc = "99: Stop all requests" })
   end,
 }
