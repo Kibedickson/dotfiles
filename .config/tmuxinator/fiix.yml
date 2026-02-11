@@ -1,0 +1,21 @@
+# ~/.config/tmuxinator/fiix.yml
+
+name: fiix
+root: ~/
+
+windows:
+  - fiix-backend:
+      root: $FIIX_BACKEND
+      panes:
+        - nvim .
+
+  - fiix-frontend:
+      root: $FIIX_FRONTEND
+      panes:
+        - nvim .
+
+  - processes:
+      layout: even-horizontal
+      panes:
+        - cd $FIIX_BACKEND && source venv/bin/activate && flask run
+        - cd $FIIX_FRONTEND && npm run dev
