@@ -7,12 +7,12 @@ windows:
   - fiix-backend:
       root: $FIIX_BACKEND
       panes:
-        - nvim .
+        - cd $FIIX_BACKEND && source venv/bin/activate && nvim .
 
   - fiix-frontend:
       root: $FIIX_FRONTEND
       panes:
-        - nvim .
+        - cd $FIIX_FRONTEND && nvim .
 
   - processes:
       layout: even-horizontal
