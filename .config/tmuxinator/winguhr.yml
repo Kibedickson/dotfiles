@@ -1,0 +1,21 @@
+# ~/.config/tmuxinator/winguhr.yml
+
+name: winguhr
+root: ~/
+
+windows:
+  - fiix-backend:
+      root: $API
+      panes:
+        - cd $API && nvim .
+
+  - fiix-frontend:
+      root: $FRONTEND
+      panes:
+        - cd $FRONTEND && nvim .
+
+  - processes:
+      layout: even-horizontal
+      panes:
+        - cd $API && composer dev
+        - cd $FRONTEND && npm run dev
