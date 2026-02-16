@@ -4,12 +4,12 @@ name: winguhr
 root: ~/
 
 windows:
-  - fiix-backend:
+  - api:
       root: $API
       panes:
         - cd $API && nvim .
 
-  - fiix-frontend:
+  - frontend:
       root: $FRONTEND
       panes:
         - cd $FRONTEND && nvim .
