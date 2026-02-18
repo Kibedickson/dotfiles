@@ -1,5 +1,14 @@
 return {
   "nvim-neo-tree/neo-tree.nvim",
+  keys = {
+    {
+      "<leader>e",
+      function()
+        require("neo-tree.command").execute({ toggle = true, dir = LazyVim.root(), reveal = true })
+      end,
+      desc = "Explorer NeoTree (reveal)",
+    },
+  },
   opts = {
     close_if_last_window = true,
     popup_border_style = "rounded",
