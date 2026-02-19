@@ -10,6 +10,9 @@ alias work='cd ~/Workspace/11degrees/'
 alias api='cd ~/Workspace/11degrees/winguhr-api'
 alias frontend='cd ~/Workspace/11degrees/winguhr-frontend'
 
+export API="/Users/dickson/Workspace/11degrees/winguhr-api"
+export FRONTEND="/Users/dickson/Workspace/11degrees/winguhr-frontend"
+
 mkcd() {
   mkdir "$1"
   cd "$1"
