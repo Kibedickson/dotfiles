@@ -6,7 +6,7 @@ return {
     local cwd = vim.uv.cwd()
     local basename = vim.fs.basename(cwd)
     _99.setup({
-      model = "opencode/kimi-k2.5-free",
+      model = "github-copilot/gpt-4.1",
       logger = {
         level = _99.DEBUG,
         path = "/tmp/" .. basename .. ".99.debug",
@@ -26,12 +26,15 @@ return {
       },
     })
 
-    vim.keymap.set("v", "<leader>9v", function()
-      _99.visual()
-    end, { desc = "99: Visual selection" })
-
     vim.keymap.set("v", "<leader>9p", function()
-      _99.visual_prompt({})
+      _99.visual()
     end, { desc = "99: Visual prompt" })
+
+    vim.keymap.set("n", "<leader>9s", function()
+      _99.search()
+    end)
+    vim.keymap.set("n", "<leader>9l", function()
+      _99.view_logs()
+    end)
   end,
 }
