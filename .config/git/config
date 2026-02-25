@@ -7,9 +7,7 @@
 	rebase = true
 [init]
 	defaultBranch = main
-[user]
-	name = Dickson
-	email = kibedickson3@gmail.com
-
 [fetch]
     prune = true
+[core]
+	excludesfile = /home/dickson/.config/git/ignore
