@@ -1,0 +1,12 @@
+#!/bin/bash
+TODO_FILE="$HOME/Documents/todo.md"
+
+if [ ! -f "$TODO_FILE" ]; then
+    echo -e "# TODO\n\n- [ ] " > "$TODO_FILE"
+fi
+
+if [ -z "$EDITOR" ]; then
+    read -p "Enter editor: " EDITOR
+fi
+
+"$EDITOR" "$TODO_FILE"
