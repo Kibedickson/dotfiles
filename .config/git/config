@@ -10,4 +10,4 @@
 [fetch]
     prune = true
 [core]
-	excludesfile = /home/dickson/.config/git/ignore
+	excludesfile = ~/.config/git/ignore
