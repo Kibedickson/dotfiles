@@ -1,21 +1,18 @@
-# ~/.config/tmuxinator/winguhr.yml
-
 name: winguhr
 root: ~/
 
 windows:
   - api:
       root: $API
+      layout: "59cb,195x55,0,0[195x44,0,0,46,195x10,0,45{97x10,0,45,47,97x10,98,45,48}]"
       panes:
         - cd $API && nvim .
+        - cd $API && clear
+        - cd $API && composer dev
 
   - frontend:
       root: $FRONTEND
+      layout: "9830,195x55,0,0[195x44,0,0,46,195x10,0,45,47]"
       panes:
         - cd $FRONTEND && nvim .
-
-  - processes:
-      layout: even-horizontal
-      panes:
-        - cd $API && composer dev
         - cd $FRONTEND && npm run dev
