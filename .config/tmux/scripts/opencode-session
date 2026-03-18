@@ -15,4 +15,4 @@ SESSION="opencode-$PROJECT_NAME-$(echo "$WORK_DIR" | md5sum | cut -c1-8)"
 tmux has-session -t "$SESSION" 2>/dev/null || \
   tmux new-session -d -s "$SESSION" -c "$WORK_DIR" "opencode"
 
-tmux display-popup -w80% -h80% -E "tmux attach-session -t $SESSION"
+tmux display-popup -w90% -h80% -E "tmux attach-session -t $SESSION"
