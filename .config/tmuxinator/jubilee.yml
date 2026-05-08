@@ -1,0 +1,22 @@
+name: jubilee
+root: ~/
+
+windows:
+  - jubilee_backend:
+      root: $JUBILEE_BACKEND
+      layout: "59cb,195x55,0,0[195x44,0,0,46,195x10,0,45{97x10,0,45,47,97x10,98,45,48\
+        }]"
+      panes:
+        - cd $JUBILEE_BACKEND && source .venv/bin/activate && nvim .
+        - cd $JUBILEE_BACKEND && source .venv/bin/activate && clear
+        - "cd $JUBILEE_BACKEND && source .venv/bin/activate && docker compose up
+          -d auth_service integration_gateway user_service product_service
+          policy_service payment_service document_service epolicy_service
+          notification_service"
+
+  - jubilee_frontend:
+      root: $JUBILEE_FRONTEND
+      layout: "9830,195x55,0,0[195x44,0,0,46,195x10,0,45,47]"
+      panes:
+        - cd $JUBILEE_FRONTEND && nvim .
+        - cd $JUBILEE_FRONTEND && npm run dev
