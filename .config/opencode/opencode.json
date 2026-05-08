@@ -1,6 +1,5 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "model": "github-copilot/gpt-5.4",
   "agent": {
     "build": {
       "permission": {
@@ -19,30 +18,6 @@
     "context7": {
       "type": "remote",
       "url": "https://mcp.context7.com/mcp"
-    },
-    "laravel-boost": {
-      "type": "local",
-      "command": [
-        "php",
-        "artisan",
-        "boost:mcp"
-      ]
-    },
-    "playwright": {
-      "type": "local",
-      "command": [
-        "npx",
-        "@playwright/mcp@latest",
-        "--extension",
-        "--executable-path",
-        "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"
-      ],
-      "enabled": true,
-    },
-    "nightwatch": {
-      "type": "remote",
-      "url": "https://nightwatch.laravel.com/mcp",
-      "oauth": {}
     },
   },
 }
