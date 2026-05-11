@@ -10,12 +10,10 @@ return {
           "vue",
         },
       },
-      ruff = {
-        init_options = {
-          settings = {
-            lint = {
-              enable = false,
-            },
+      pyright = {
+        settings = {
+          python = {
+            pythonPath = vim.env.VIRTUAL_ENV and (vim.env.VIRTUAL_ENV .. "/bin/python") or "python",
           },
         },
       },
