@@ -6,12 +6,23 @@ alias mfs='php artisan migrate:fresh --seed'
 
 alias mysql='mysql -u root -p'
 
+alias personal='cd ~/Workspace/personal/Projects/'
 alias work='cd ~/Workspace/11degrees/'
 alias api='cd ~/Workspace/11degrees/winguhr-api'
 alias frontend='cd ~/Workspace/11degrees/winguhr-frontend'
 
+alias w='tmuxinator start winguhr'
+alias wq='tmuxinator stop winguhr'
+
+alias taskflow='cd ~/Workspace/personal/Projects/taskflow/'
+alias t='tmuxinator start taskflow'
+
 export API="/Users/dickson/Workspace/11degrees/winguhr-api"
 export FRONTEND="/Users/dickson/Workspace/11degrees/winguhr-frontend"
+
+export TASKFLOW="/Users/dickson/Workspace/personal/Projects/taskflow"
+export TASKFLOW_BACKEND="/Users/dickson/Workspace/personal/Projects/taskflow/backend"
+export TASKFLOW_FRONTEND="/Users/dickson/Workspace/personal/Projects/taskflow/frontend"
 
 mkcd() {
   mkdir "$1"

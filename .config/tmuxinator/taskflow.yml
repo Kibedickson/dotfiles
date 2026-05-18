@@ -1,0 +1,11 @@
+name: taskflow
+root: ~/
+
+windows:
+  - taskflow:
+      root: $TASKFLOW
+      layout: "59cb,195x55,0,0[195x44,0,0,46,195x10,0,45{97x10,0,45,47,97x10,98,45,48}]"
+      panes:
+        - cd $TASKFLOW && eval $(poetry env activate) && nvim .
+        - cd $TASKFLOW_BACKEND && poetry run uvicorn src.main:app --port 8000 --reload
+        - cd $TASKFLOW_FRONTEND && npm run dev
