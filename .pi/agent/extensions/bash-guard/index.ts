@@ -122,6 +122,44 @@ function analyzeSegment(seg: Token[]): Risk | null {
 		}
 	}
 
+	// gh (GitHub CLI) operations (prompt on ANY gh command)
+	if (cmd === "gh") {
+		const sub = rest[0];
+		const subArgs = rest.slice(1);
+
+		// Always prompt for gh commands. Keep severity medium unless an explicit high-risk pattern is detected.
+		reasons.push(sub ? `gh ${sub} (GitHub CLI command)` : "gh (GitHub CLI command)");
+
+		if (sub === "repo" && subArgs[0] === "delete") {
+			severity = "high";
+			reasons.push("gh repo delete (deletes a GitHub repository)");
+		}
+		if (sub === "secret" && (subArgs[0] === "delete" || subArgs[0] === "set")) {
+			severity = "high";
+			reasons.push(`gh secret ${subArgs[0]} (modifies repository/organization secrets)`);
+		}
+		if (sub === "variable" && (subArgs[0] === "delete" || subArgs[0] === "set")) {
+			severity = "high";
+			reasons.push(`gh variable ${subArgs[0]} (modifies repository/organization variables)`);
+		}
+		if (sub === "release" && (subArgs[0] === "delete" || subArgs[0] === "delete-asset")) {
+			severity = "high";
+			reasons.push(`gh release ${subArgs[0]} (deletes a GitHub release or asset)`);
+		}
+		if (sub === "run" && subArgs[0] === "delete") {
+			severity = "high";
+			reasons.push("gh run delete (deletes workflow run)");
+		}
+		if (sub === "workflow" && subArgs[0] === "delete") {
+			severity = "high";
+			reasons.push("gh workflow delete (deletes workflow)");
+		}
+		if (sub === "api" && subArgs.some((a) => a === "-X" || a === "--method") && subArgs.some((a) => ["DELETE", "PATCH", "PUT"].includes(a.toUpperCase()))) {
+			severity = "high";
+			reasons.push("gh api with destructive method (DELETE/PATCH/PUT)");
+		}
+	}
+
 	// truncate
 	if (cmd === "truncate") {
 		severity = severity === "high" ? "high" : "medium";
@@ -306,8 +344,27 @@ function analyzeBashCommand(command: string): Risk | null {
 	return { severity, reasons: uniq };
 }
 
-async function promptRunOrAbort(ctx: any, command: string, risk: Risk): Promise<"run" | "abort"> {
+function sendDesktopNotification(pi: ExtensionAPI, severity: Severity, command: string): void {
+	const title = "bash-guard";
+	const body = `${severity.toUpperCase()}: ${command.length > 100 ? command.slice(0, 97) + "..." : command}`;
+
+	if (process.platform === "darwin") {
+		// macOS: osascript display notification
+		pi.exec("osascript", ["-e", `display notification "${body.replace(/"/g, "'")}" with title "${title}"`]);
+	} else {
+		// Linux: notify-send
+		pi.exec("notify-send", [
+			title,
+			body,
+			severity === "high" ? "--urgency=critical" : "--urgency=normal",
+		]);
+	}
+}
+
+async function promptRunOrAbort(pi: ExtensionAPI, ctx: any, command: string, risk: Risk): Promise<"run" | "abort"> {
 	if (!ctx.hasUI) return "abort";
+
+	sendDesktopNotification(pi, risk.severity, command);
 
 	const reasonsText = risk.reasons.map((r) => `• ${r}`).join("\n");
 	const header = `Command flagged as ${risk.severity.toUpperCase()} risk:`;
@@ -390,6 +447,14 @@ const HEADLESS_BLOCKED: Array<{ pattern: RegExp; reason: string }> = [
 	{ pattern: /\bgit\s+clean\b[^#\n]*-[a-zA-Z]*f/, reason: "delete untracked files (git clean -f)" },
 	{ pattern: /\bgit\s+reflog\s+expire\b/, reason: "expire reflog (removes recovery history)" },
 	{ pattern: /\bgit\s+gc\b[^#\n]*--prune\b/, reason: "prune unreachable objects (git gc --prune)" },
+	// Destructive gh (GitHub CLI) operations
+	{ pattern: /\bgh\s+repo\s+delete\b/, reason: "delete GitHub repository (gh repo delete)" },
+	{ pattern: /\bgh\s+secret\s+(delete|set)\b/, reason: "modify repository/organization secrets (gh secret)" },
+	{ pattern: /\bgh\s+variable\s+(delete|set)\b/, reason: "modify repository/organization variables (gh variable)" },
+	{ pattern: /\bgh\s+release\s+(delete|delete-asset)\b/, reason: "delete GitHub release or asset (gh release delete)" },
+	{ pattern: /\bgh\s+run\s+delete\b/, reason: "delete workflow run (gh run delete)" },
+	{ pattern: /\bgh\s+workflow\s+delete\b/, reason: "delete workflow (gh workflow delete)" },
+	{ pattern: /\bgh\s+api\b[^#\n]*-(?:X\s+|--method\s+)(?:DELETE|PATCH|PUT)\b/, reason: "destructive GitHub API call (gh api with DELETE/PATCH/PUT)" },
 ];
 
 export default function (pi: ExtensionAPI) {
@@ -446,7 +511,7 @@ export default function (pi: ExtensionAPI) {
 			return;
 		}
 
-		const choice = await promptRunOrAbort(ctx, command, risk);
+		const choice = await promptRunOrAbort(pi, ctx, command, risk);
 		if (choice === "run") return;
 
 		recentlyAborted.set(command, now);
