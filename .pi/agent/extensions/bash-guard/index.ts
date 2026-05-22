@@ -50,258 +50,265 @@ function analyzeSegment(seg: Token[]): Risk | null {
 	const reasons: string[] = [];
 	let severity: Severity = "medium";
 
-	const ops = seg.filter(isOpToken).map((o) => o.op);
-	const args = tokensToStrings(seg);
-	if (args.length === 0) return null;
+	const allArgs = tokensToStrings(seg);
+	if (allArgs.length === 0) return null;
 
-	const cmd = args[0];
-	const rest = args.slice(1);
+	// Split pipeline into individual commands
+	const pipeParts = splitOnOps(seg, ["|"]);
 
-	// Shell redirection / pipes are handled on the whole command, but keep some segment checks too.
-	if (ops.includes("|") && (args.includes("sh") || args.includes("bash") || args.includes("zsh") || args.includes("fish"))) {
-		reasons.push("pipe to a shell (possible remote code execution)");
-		severity = "high";
-	}
-
-	// sudo
-	if (cmd === "sudo") {
-		reasons.push("sudo (elevated privileges)");
-		severity = "high";
-	}
-
-	// rm/rmdir/unlink
-	if (cmd === "rm" || cmd === "rmdir" || cmd === "unlink") {
-		severity = "high";
-		reasons.push(`${cmd} (file deletion)`);
-		if (rest.some((a) => a.includes("-r") || a.includes("-R"))) reasons.push("recursive delete (-r/-R)");
-		if (rest.some((a) => a.includes("-f"))) reasons.push("forced delete (-f)");
-		if (ops.includes("glob")) reasons.push("glob pattern expansion (may delete many files)");
-	}
-
-	// find -delete
-	if (cmd === "find" && rest.includes("-delete")) {
-		severity = "high";
-		reasons.push("find -delete (bulk deletion)");
-	}
-
-	// git operations (prompt on ANY git command)
-	if (cmd === "git") {
-		const sub = rest[0];
-		const subArgs = rest.slice(1);
-
-		// Always prompt for git commands (user requested). Keep severity medium unless an explicit high-risk pattern is detected.
-		reasons.push(sub ? `git ${sub} (git command)` : "git (git command)");
-
-		if (sub === "rm") {
-			severity = "high";
-			reasons.push("git rm (deletes files from working tree and stages deletions)");
+	// Pipe-to-shell: flag if any command to the RIGHT of a pipe is a shell
+	if (pipeParts.length > 1) {
+		for (let i = 1; i < pipeParts.length; i++) {
+			const partArgs = tokensToStrings(pipeParts[i]);
+			if (partArgs.length > 0) {
+				const partCmd = partArgs[0];
+				if (partCmd === "sh" || partCmd === "bash" || partCmd === "zsh" || partCmd === "fish") {
+					reasons.push("pipe to a shell (possible remote code execution)");
+					severity = "high";
+					break;
+				}
+			}
 		}
-		if (sub === "clean" && (subArgs.some((a) => a.includes("-f")) || subArgs.includes("-d") || subArgs.includes("-x"))) {
+	}
+
+	// Analyze every command in the pipeline
+	for (const part of pipeParts) {
+		const partOps = part.filter(isOpToken).map((o) => o.op);
+		const args = tokensToStrings(part);
+		if (args.length === 0) continue;
+
+		const cmd = args[0];
+		const rest = args.slice(1);
+
+		// sudo
+		if (cmd === "sudo") {
+			reasons.push("sudo (elevated privileges)");
 			severity = "high";
-			reasons.push("git clean (can delete untracked files)");
 		}
-		if (sub === "reset" && subArgs.includes("--hard")) {
+
+		// rm/rmdir/unlink
+		if (cmd === "rm" || cmd === "rmdir" || cmd === "unlink") {
 			severity = "high";
-			reasons.push("git reset --hard (discard changes)");
+			reasons.push(`${cmd} (file deletion)`);
+			if (rest.some((a) => a.includes("-r") || a.includes("-R"))) reasons.push("recursive delete (-r/-R)");
+			if (rest.some((a) => a.includes("-f"))) reasons.push("forced delete (-f)");
+			if (partOps.includes("glob")) reasons.push("glob pattern expansion (may delete many files)");
 		}
-		if ((sub === "checkout" || sub === "restore") && (subArgs.includes(".") || subArgs.includes("--") || subArgs.includes("--source"))) {
+
+		// find -delete
+		if (cmd === "find" && rest.includes("-delete")) {
+			severity = "high";
+			reasons.push("find -delete (bulk deletion)");
+		}
+
+		// git operations (prompt on ANY git command)
+		if (cmd === "git") {
+			const sub = rest[0];
+			const subArgs = rest.slice(1);
+
+			reasons.push(sub ? `git ${sub} (git command)` : "git (git command)");
+
+			if (sub === "rm") {
+				severity = "high";
+				reasons.push("git rm (deletes files from working tree and stages deletions)");
+			}
+			if (sub === "clean" && (subArgs.some((a) => a.includes("-f")) || subArgs.includes("-d") || subArgs.includes("-x"))) {
+				severity = "high";
+				reasons.push("git clean (can delete untracked files)");
+			}
+			if (sub === "reset" && subArgs.includes("--hard")) {
+				severity = "high";
+				reasons.push("git reset --hard (discard changes)");
+			}
+			if ((sub === "checkout" || sub === "restore") && (subArgs.includes(".") || subArgs.includes("--") || subArgs.includes("--source"))) {
+				severity = severity === "high" ? "high" : "medium";
+				reasons.push("git checkout/restore (can overwrite working tree)");
+			}
+			if (sub === "push" && (subArgs.includes("--force") || subArgs.includes("--force-with-lease") || subArgs.includes("-f"))) {
+				severity = "high";
+				reasons.push("git push --force (rewrite remote history)");
+			}
+			if (sub === "reflog" && subArgs.includes("expire")) {
+				severity = "high";
+				reasons.push("git reflog expire (can remove recovery history)");
+			}
+			if (sub === "gc" && subArgs.some((a) => a.startsWith("--prune"))) {
+				severity = "high";
+				reasons.push("git gc --prune (can permanently delete objects)");
+			}
+		}
+
+		// gh (GitHub CLI) operations (prompt on ANY gh command)
+		if (cmd === "gh") {
+			const sub = rest[0];
+			const subArgs = rest.slice(1);
+
+			reasons.push(sub ? `gh ${sub} (GitHub CLI command)` : "gh (GitHub CLI command)");
+
+			if (sub === "repo" && subArgs[0] === "delete") {
+				severity = "high";
+				reasons.push("gh repo delete (deletes a GitHub repository)");
+			}
+			if (sub === "secret" && (subArgs[0] === "delete" || subArgs[0] === "set")) {
+				severity = "high";
+				reasons.push(`gh secret ${subArgs[0]} (modifies repository/organization secrets)`);
+			}
+			if (sub === "variable" && (subArgs[0] === "delete" || subArgs[0] === "set")) {
+				severity = "high";
+				reasons.push(`gh variable ${subArgs[0]} (modifies repository/organization variables)`);
+			}
+			if (sub === "release" && (subArgs[0] === "delete" || subArgs[0] === "delete-asset")) {
+				severity = "high";
+				reasons.push(`gh release ${subArgs[0]} (deletes a GitHub release or asset)`);
+			}
+			if (sub === "run" && subArgs[0] === "delete") {
+				severity = "high";
+				reasons.push("gh run delete (deletes workflow run)");
+			}
+			if (sub === "workflow" && subArgs[0] === "delete") {
+				severity = "high";
+				reasons.push("gh workflow delete (deletes workflow)");
+			}
+			if (sub === "api" && subArgs.some((a) => a === "-X" || a === "--method") && subArgs.some((a) => ["DELETE", "PATCH", "PUT"].includes(a.toUpperCase()))) {
+				severity = "high";
+				reasons.push("gh api with destructive method (DELETE/PATCH/PUT)");
+			}
+		}
+
+		// truncate
+		if (cmd === "truncate") {
 			severity = severity === "high" ? "high" : "medium";
-			reasons.push("git checkout/restore (can overwrite working tree)");
+			reasons.push("truncate (in-place size change, can erase contents)");
 		}
-		if (sub === "push" && (subArgs.includes("--force") || subArgs.includes("--force-with-lease") || subArgs.includes("-f"))) {
+
+		// dd of=
+		if (cmd === "dd" && (anyArgStartsWith(rest, "of=") || rest.includes("of"))) {
 			severity = "high";
-			reasons.push("git push --force (rewrite remote history)");
+			reasons.push("dd with output file/device (can overwrite data)");
 		}
-		if (sub === "reflog" && subArgs.includes("expire")) {
+
+		// Disk / volume management
+		if (cmd.startsWith("mkfs")) {
 			severity = "high";
-			reasons.push("git reflog expire (can remove recovery history)");
+			reasons.push("mkfs (filesystem formatting)");
 		}
-		if (sub === "gc" && subArgs.some((a) => a.startsWith("--prune"))) {
+		if (cmd.startsWith("newfs_")) {
 			severity = "high";
-			reasons.push("git gc --prune (can permanently delete objects)");
+			reasons.push("newfs_* (filesystem formatting)");
 		}
-	}
-
-	// gh (GitHub CLI) operations (prompt on ANY gh command)
-	if (cmd === "gh") {
-		const sub = rest[0];
-		const subArgs = rest.slice(1);
-
-		// Always prompt for gh commands. Keep severity medium unless an explicit high-risk pattern is detected.
-		reasons.push(sub ? `gh ${sub} (GitHub CLI command)` : "gh (GitHub CLI command)");
-
-		if (sub === "repo" && subArgs[0] === "delete") {
+		if (cmd === "wipefs") {
 			severity = "high";
-			reasons.push("gh repo delete (deletes a GitHub repository)");
+			reasons.push("wipefs (disk signature wipe)");
 		}
-		if (sub === "secret" && (subArgs[0] === "delete" || subArgs[0] === "set")) {
+		if (cmd === "diskutil") {
 			severity = "high";
-			reasons.push(`gh secret ${subArgs[0]} (modifies repository/organization secrets)`);
+			reasons.push("diskutil (disk management command)");
+			if (rest.includes("eraseDisk") || rest.includes("eraseVolume")) {
+				reasons.push("diskutil erase (destructive disk operation)");
+			}
 		}
-		if (sub === "variable" && (subArgs[0] === "delete" || subArgs[0] === "set")) {
+		if (cmd === "hdiutil") {
 			severity = "high";
-			reasons.push(`gh variable ${subArgs[0]} (modifies repository/organization variables)`);
+			reasons.push("hdiutil (disk image management command)");
 		}
-		if (sub === "release" && (subArgs[0] === "delete" || subArgs[0] === "delete-asset")) {
+		if (cmd === "gpt") {
 			severity = "high";
-			reasons.push(`gh release ${subArgs[0]} (deletes a GitHub release or asset)`);
+			reasons.push("gpt (partition table manipulation)");
 		}
-		if (sub === "run" && subArgs[0] === "delete") {
+		if (cmd === "asr") {
 			severity = "high";
-			reasons.push("gh run delete (deletes workflow run)");
+			reasons.push("asr (Apple Software Restore; can overwrite volumes)");
 		}
-		if (sub === "workflow" && subArgs[0] === "delete") {
+		if (cmd === "parted" || cmd === "fdisk" || cmd === "gdisk" || cmd === "sgdisk") {
 			severity = "high";
-			reasons.push("gh workflow delete (deletes workflow)");
+			reasons.push(`${cmd} (disk/partition management)`);
 		}
-		if (sub === "api" && subArgs.some((a) => a === "-X" || a === "--method") && subArgs.some((a) => ["DELETE", "PATCH", "PUT"].includes(a.toUpperCase()))) {
+		if (cmd === "lsblk") {
+			severity = severity === "high" ? "high" : "medium";
+			reasons.push("lsblk (disk listing)");
+		}
+		if (cmd === "cryptsetup") {
 			severity = "high";
-			reasons.push("gh api with destructive method (DELETE/PATCH/PUT)");
+			reasons.push("cryptsetup (disk encryption management)");
 		}
-	}
-
-	// truncate
-	if (cmd === "truncate") {
-		severity = severity === "high" ? "high" : "medium";
-		reasons.push("truncate (in-place size change, can erase contents)");
-	}
-
-	// dd of=
-	if (cmd === "dd" && (anyArgStartsWith(rest, "of=") || rest.includes("of"))) {
-		severity = "high";
-		reasons.push("dd with output file/device (can overwrite data)");
-	}
-
-	// Disk / volume management (prompt aggressively; high risk)
-	// Linux: mkfs.*, wipefs, parted, fdisk, gdisk/sgdisk, lsblk, cryptsetup, LVM tools, zpool
-	// macOS: diskutil, hdiutil, gpt, newfs_*, asr
-	if (cmd.startsWith("mkfs")) {
-		severity = "high";
-		reasons.push("mkfs (filesystem formatting)");
-	}
-	if (cmd.startsWith("newfs_")) {
-		severity = "high";
-		reasons.push("newfs_* (filesystem formatting)");
-	}
-	if (cmd === "wipefs") {
-		severity = "high";
-		reasons.push("wipefs (disk signature wipe)");
-	}
-	if (cmd === "diskutil") {
-		severity = "high";
-		reasons.push("diskutil (disk management command)");
-		if (rest.includes("eraseDisk") || rest.includes("eraseVolume")) {
-			reasons.push("diskutil erase (destructive disk operation)");
-		}
-	}
-	if (cmd === "hdiutil") {
-		severity = "high";
-		reasons.push("hdiutil (disk image management command)");
-	}
-	if (cmd === "gpt") {
-		severity = "high";
-		reasons.push("gpt (partition table manipulation)");
-	}
-	if (cmd === "asr") {
-		severity = "high";
-		reasons.push("asr (Apple Software Restore; can overwrite volumes)");
-	}
-	if (cmd === "parted" || cmd === "fdisk" || cmd === "gdisk" || cmd === "sgdisk") {
-		severity = "high";
-		reasons.push(`${cmd} (disk/partition management)`);
-	}
-	if (cmd === "lsblk") {
-		// Usually read-only, but still disk-related; prompt as requested.
-		severity = severity === "high" ? "high" : "medium";
-		reasons.push("lsblk (disk listing)");
-	}
-	if (cmd === "cryptsetup") {
-		severity = "high";
-		reasons.push("cryptsetup (disk encryption management)");
-	}
-	if (cmd === "pvcreate" || cmd === "vgcreate" || cmd === "lvcreate") {
-		severity = "high";
-		reasons.push(`${cmd} (LVM volume management)`);
-	}
-	if (cmd === "zpool") {
-		severity = "high";
-		reasons.push("zpool (ZFS pool management)");
-	}
-
-	// chmod/chown recursive
-	if (cmd === "chmod" && (rest.includes("-R") || rest.includes("--recursive"))) {
-		severity = severity === "high" ? "high" : "medium";
-		reasons.push("chmod -R (recursive permission changes)");
-	}
-	if (cmd === "chown" && (rest.includes("-R") || rest.includes("--recursive"))) {
-		severity = severity === "high" ? "high" : "medium";
-		reasons.push("chown -R (recursive ownership changes)");
-	}
-
-	// mv/cp overwriting
-	if (cmd === "mv" && (rest.includes("-f") || rest.includes("--force"))) {
-		severity = severity === "high" ? "high" : "medium";
-		reasons.push("mv --force/-f (can overwrite files)");
-	}
-	if (cmd === "cp" && (rest.includes("-f") || rest.includes("--force"))) {
-		severity = severity === "high" ? "high" : "medium";
-		reasons.push("cp --force/-f (can overwrite files)");
-	}
-
-	// sed/perl in-place
-	if (cmd === "sed" && (hasFlag(rest, "-i") || rest.includes("--in-place"))) {
-		severity = severity === "high" ? "high" : "medium";
-		reasons.push("sed -i (in-place file modification)");
-	}
-	if (cmd === "perl" && (rest.includes("-pi") || (rest.includes("-p") && rest.includes("-i")))) {
-		severity = severity === "high" ? "high" : "medium";
-		reasons.push("perl -pi/-i (in-place file modification)");
-	}
-
-	// kill/shutdown/systemctl
-	if (cmd === "kill" || cmd === "pkill" || cmd === "killall") {
-		severity = severity === "high" ? "high" : "medium";
-		reasons.push(`${cmd} (process termination)`);
-		if (rest.includes("-9")) {
+		if (cmd === "pvcreate" || cmd === "vgcreate" || cmd === "lvcreate") {
 			severity = "high";
-			reasons.push("SIGKILL (-9)");
+			reasons.push(`${cmd} (LVM volume management)`);
 		}
-	}
-	if (cmd === "shutdown" || cmd === "reboot") {
-		severity = "high";
-		reasons.push(`${cmd} (system power operation)`);
-	}
-	if (cmd === "systemctl" && (rest.includes("stop") || rest.includes("disable"))) {
-		severity = severity === "high" ? "high" : "medium";
-		reasons.push("systemctl stop/disable (service disruption)");
-	}
+		if (cmd === "zpool") {
+			severity = "high";
+			reasons.push("zpool (ZFS pool management)");
+		}
 
-	// Remote execution patterns
-	if ((cmd === "curl" || cmd === "wget") && ops.includes("|")) {
-		severity = "high";
-		reasons.push("curl/wget piped (possible remote code execution)");
-	}
+		// chmod/chown recursive
+		if (cmd === "chmod" && (rest.includes("-R") || rest.includes("--recursive"))) {
+			severity = severity === "high" ? "high" : "medium";
+			reasons.push("chmod -R (recursive permission changes)");
+		}
+		if (cmd === "chown" && (rest.includes("-R") || rest.includes("--recursive"))) {
+			severity = severity === "high" ? "high" : "medium";
+			reasons.push("chown -R (recursive ownership changes)");
+		}
 
-	// Infra deletes
-	if (cmd === "kubectl" && rest[0] === "delete") {
-		severity = "high";
-		reasons.push("kubectl delete (resource deletion)");
-	}
-	if (cmd === "terraform" && rest[0] === "destroy") {
-		severity = "high";
-		reasons.push("terraform destroy (infrastructure teardown)");
-	}
-	if (cmd === "aws" && rest[0] === "s3" && rest[1] === "rm" && rest.includes("--recursive")) {
-		severity = "high";
-		reasons.push("aws s3 rm --recursive (bulk deletion)");
-	}
-	if (cmd === "gcloud" && rest.includes("delete")) {
-		severity = "high";
-		reasons.push("gcloud delete (resource deletion)");
+		// mv/cp overwriting
+		if (cmd === "mv" && (rest.includes("-f") || rest.includes("--force"))) {
+			severity = severity === "high" ? "high" : "medium";
+			reasons.push("mv --force/-f (can overwrite files)");
+		}
+		if (cmd === "cp" && (rest.includes("-f") || rest.includes("--force"))) {
+			severity = severity === "high" ? "high" : "medium";
+			reasons.push("cp --force/-f (can overwrite files)");
+		}
+
+		// sed/perl in-place
+		if (cmd === "sed" && (hasFlag(rest, "-i") || rest.includes("--in-place"))) {
+			severity = severity === "high" ? "high" : "medium";
+			reasons.push("sed -i (in-place file modification)");
+		}
+		if (cmd === "perl" && (rest.includes("-pi") || (rest.includes("-p") && rest.includes("-i")))) {
+			severity = severity === "high" ? "high" : "medium";
+			reasons.push("perl -pi/-i (in-place file modification)");
+		}
+
+		// kill/shutdown/systemctl
+		if (cmd === "kill" || cmd === "pkill" || cmd === "killall") {
+			severity = severity === "high" ? "high" : "medium";
+			reasons.push(`${cmd} (process termination)`);
+			if (rest.includes("-9")) {
+				severity = "high";
+				reasons.push("SIGKILL (-9)");
+			}
+		}
+		if (cmd === "shutdown" || cmd === "reboot") {
+			severity = "high";
+			reasons.push(`${cmd} (system power operation)`);
+		}
+		if (cmd === "systemctl" && (rest.includes("stop") || rest.includes("disable"))) {
+			severity = severity === "high" ? "high" : "medium";
+			reasons.push("systemctl stop/disable (service disruption)");
+		}
+
+		// Infra deletes
+		if (cmd === "kubectl" && rest[0] === "delete") {
+			severity = "high";
+			reasons.push("kubectl delete (resource deletion)");
+		}
+		if (cmd === "terraform" && rest[0] === "destroy") {
+			severity = "high";
+			reasons.push("terraform destroy (infrastructure teardown)");
+		}
+		if (cmd === "aws" && rest[0] === "s3" && rest[1] === "rm" && rest.includes("--recursive")) {
+			severity = "high";
+			reasons.push("aws s3 rm --recursive (bulk deletion)");
+		}
+		if (cmd === "gcloud" && rest.includes("delete")) {
+			severity = "high";
+			reasons.push("gcloud delete (resource deletion)");
+		}
 	}
 
 	if (reasons.length === 0) return null;
-	return { severity, reasons };
+	return { severity, reasons: [...new Set(reasons)] };
 }
 
 function analyzeBashCommand(command: string): Risk | null {
@@ -315,19 +322,6 @@ function analyzeBashCommand(command: string): Risk | null {
 
 	const reasons: string[] = [];
 	let severity: Severity = "medium";
-
-	// Whole-command operator checks
-	const ops = tokens.filter(isOpToken).map((t) => t.op);
-	if (ops.some((op) => op === ">" || op === ">>" || op === "2>" || op === "2>>")) {
-		reasons.push("shell output redirection (can overwrite files)");
-		severity = severity === "high" ? "high" : "medium";
-	}
-	if (ops.includes("<")) {
-		reasons.push("shell input redirection (questionable)");
-	}
-	if (ops.includes("|")) {
-		reasons.push("pipe operator (chained commands)");
-	}
 
 	// Segment analysis (split on &&, ||, ;)
 	const segments = splitOnOps(tokens, ["&&", "||", ";"]);
