@@ -20,6 +20,12 @@ alias t='tmuxinator start taskflow'
 export API="/Users/dickson/Workspace/11degrees/winguhr-api"
 export FRONTEND="/Users/dickson/Workspace/11degrees/winguhr-frontend"
 
+export JUBILEE_BACKEND="/Users/dickson/Workspace/shinrai/jubilee_life_portal_backend"
+export JUBILEE_FRONTEND="/Users/dickson/Workspace/shinrai/jubilee_life_portal_frontend/life_portal"
+
+alias j='tmuxinator start jubilee'
+alias jq='tmuxinator stop jubilee'
+
 export TASKFLOW="/Users/dickson/Workspace/personal/Projects/taskflow"
 export TASKFLOW_BACKEND="/Users/dickson/Workspace/personal/Projects/taskflow/backend"
 export TASKFLOW_FRONTEND="/Users/dickson/Workspace/personal/Projects/taskflow/frontend"
