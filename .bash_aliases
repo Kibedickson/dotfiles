@@ -49,3 +49,6 @@ export EDITOR="nvim"
 export SUDO_EDITOR="$EDITOR"
 
 alias ls='ls -al'
+
+alias npm='sfw npm'
+alias npx='sfw npx'
