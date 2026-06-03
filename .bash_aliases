@@ -24,7 +24,7 @@ export JUBILEE_BACKEND="/Users/dickson/Workspace/shinrai/jubilee_life_portal_bac
 export JUBILEE_FRONTEND="/Users/dickson/Workspace/shinrai/jubilee_life_portal_frontend/life_portal"
 
 alias j='tmuxinator start jubilee'
-alias jq='tmuxinator stop jubilee'
+alias jq='cd $JUBILEE_BACKEND && docker compose down && tmuxinator stop jubilee'
 
 export TASKFLOW="/Users/dickson/Workspace/personal/Projects/taskflow"
 export TASKFLOW_BACKEND="/Users/dickson/Workspace/personal/Projects/taskflow/backend"
