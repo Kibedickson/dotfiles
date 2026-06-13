@@ -20,11 +20,17 @@ alias t='tmuxinator start taskflow'
 export API="/Users/dickson/Workspace/11degrees/winguhr-api"
 export FRONTEND="/Users/dickson/Workspace/11degrees/winguhr-frontend"
 
-export JUBILEE_BACKEND="/Users/dickson/Workspace/shinrai/jubilee_life_portal_backend"
-export JUBILEE_FRONTEND="/Users/dickson/Workspace/shinrai/jubilee_life_portal_frontend/life_portal"
+export JUBILEE_BACKEND="/Users/dickson/Workspace/shinrai/jubilee_life_portal_backend_tz"
+export JUBILEE_FRONTEND="/Users/dickson/Workspace/shinrai/jubilee_life_portal_frontend_TZ/life_portal"
+
+export JUBILEE_BACKEND_KE="/Users/dickson/Workspace/shinrai/jubilee_life_portal_backend"
+export JUBILEE_FRONTEND_KE="/Users/dickson/Workspace/shinrai/jubilee_life_portal_frontend/life_portal"
 
 alias j='tmuxinator start jubilee'
 alias jq='cd $JUBILEE_BACKEND && docker compose down && tmuxinator stop jubilee'
+
+alias k='tmuxinator start jubilee_ke'
+alias kq='cd $JUBILEE_BACKEND_KE && docker compose down && tmuxinator stop jubilee_ke'
 
 export TASKFLOW="/Users/dickson/Workspace/personal/Projects/taskflow"
 export TASKFLOW_BACKEND="/Users/dickson/Workspace/personal/Projects/taskflow/backend"
