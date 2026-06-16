@@ -4,14 +4,14 @@ root: ~/
 windows:
   - jubilee_backend:
       root: $JUBILEE_BACKEND
-      layout: "59cb,195x55,0,0[195x44,0,0,46,195x10,0,45{97x10,0,45,47,97x10,98,45,48\
+      layout:
+        "59cb,195x55,0,0[195x44,0,0,46,195x10,0,45{97x10,0,45,47,97x10,98,45,48\
         }]"
       panes:
         - cd $JUBILEE_BACKEND && source .venv/bin/activate && nvim .
         - >-
-          cd $JUBILEE_BACKEND_KE && docker compose up -d postgres redis pgadmin
-          && cd $JUBILEE_BACKEND && source .venv/bin/activate && docker compose
-          up -d auth_service integration_gateway notification_service
+          cd $JUBILEE_BACKEND && source .venv/bin/activate && docker compose
+          up -d postgres redis pgadmin auth_service integration_gateway notification_service
           user_service product_service policy_service document_service
           epolicy_service
 
