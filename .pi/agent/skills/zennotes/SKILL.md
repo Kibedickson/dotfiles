@@ -13,15 +13,23 @@ Read and write markdown documents to the Zennotes vault on the Raspberry Pi.
 
 ```
 ~/docker/zennotes/vault/
-├── inbox/          ← default destination
-│   ├── Work/       ← work-related docs
-│   └── Personal/   ← personal docs
-├── quick/          ← short, ephemeral notes
-├── archive/        ← archived docs
-└── trash/          ← deleted docs
+├── inbox/               ← default destination
+│   ├── Work/            ← work-related docs
+│   │   └── {project}/   ← project subfolders (e.g. jubilee_tz/)
+│   │       ├── requirements/
+│   │       ├── reference/
+│   │       ├── issues/
+│   │       ├── prs/
+│   │       ├── docs/
+│   │       ├── archive/
+│   │       └── others/
+│   └── Personal/        ← personal docs
+├── quick/               ← short, ephemeral notes
+├── archive/             ← archived docs
+└── trash/               ← deleted docs
 ```
 
-## Routing Rules
+Top-level routing rules:
 
 - **No folder specified** → `inbox/`
 - **"work"** → `inbox/Work/`
@@ -30,6 +38,33 @@ Read and write markdown documents to the Zennotes vault on the Raspberry Pi.
 - **"archive"** → `archive/`
 
 Always use `inbox/` unless the user explicitly names another folder.
+
+### Project & Category Auto-Routing
+
+When writing to **Work**, always determine the **project** and **category** subfolder automatically — never dump files flat into `inbox/Work/` or `inbox/Work/{project}/`.
+
+**Project detection** — infer from context:
+- Current working directory (e.g. `jubilee_life_portal_backend_tz` → project `jubilee_tz`)
+- User mentions a project name explicitly
+- Existing project folders under `inbox/Work/` (list with `ssh rasp "ls $VAULT/inbox/Work/"`)
+- If no project is identifiable, ask the user
+
+**Category auto-routing** — classify the document and place it in the correct subfolder:
+
+| Category | Subfolder | Signals |
+|----------|-----------|----------|
+| Requirements | `requirements/` | BRD, business requirements, functional specs, user stories, acceptance criteria |
+| Reference | `reference/` | API docs, database schemas, architecture diagrams, technical references, cheatsheets |
+| Issues | `issues/` | GitHub issues, implementation plans, bug plans, feature plans keyed to an issue number |
+| PRs | `prs/` | Pull request descriptions, PR review notes, release notes |
+| Docs | `docs/` | How-to guides, runbooks, setup guides, onboarding docs, meeting notes, general documentation |
+| Others | `others/` | Anything that doesn't fit the above categories |
+
+**Rules:**
+- Always auto-route — do not ask the user to pick a category unless the document is genuinely ambiguous
+- Create project/category subfolders on write if they don't exist (`mkdir -p`)
+- Match the existing project folder name exactly (check with `ls` before writing)
+- For issue files, prefix with the issue number: `01-da-customer-lookup.md`, `02-profile-creation.md`
 
 ## How to Read
 
@@ -68,10 +103,14 @@ Use the `bash` tool with a two-step approach — write to a local temp file, the
 scp /tmp/PLAN_NAME.md rasp:$VAULT/inbox/PLAN_NAME.md
 ```
 
-For Work or Personal:
+For Work — auto-route to project/category:
 
 ```bash
-scp /tmp/PLAN_NAME.md rasp:$VAULT/inbox/Work/PLAN_NAME.md
+# Create subfolder if needed
+ssh rasp "mkdir -p $VAULT/inbox/Work/{project}/{category}"
+
+# Copy to the Pi (example: jubilee_tz project, issues category)
+scp /tmp/01-da-customer-lookup.md rasp:$VAULT/inbox/Work/jubilee_tz/issues/01-da-customer-lookup.md
 ```
 
 Always `scp` from `/tmp/` — it avoids quoting and heredoc nesting issues.
@@ -111,9 +150,9 @@ Frontmatter is optional. When in doubt, skip it and use a Markdown heading inste
 
 ## Write Workflow
 
-1. Ask what the document is about (if not obvious from the request).
+1. Determine the **project** (from context or cwd) and **category** (from document content) automatically.
 2. Draft the content.
-3. Confirm the destination folder (default: `inbox/`).
-4. Write using the `write` tool to `/tmp/`, then `scp` to the Pi.
+3. Write using the `write` tool to `/tmp/`.
+4. `mkdir -p` the target folder on the Pi, then `scp` to the correct project/category path.
 5. Verify with `ssh rasp "cat $VAULT/..."`.
-6. Confirm the file path to the user.
+6. Confirm the full file path to the user.
