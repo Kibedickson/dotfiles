@@ -10,7 +10,4 @@
 [fetch]
     prune = true
 [core]
-	excludesfile = /home/dickson/.config/git/ignore
-[user]
-	email = dickson.kibe@shinraitechnologies.io
-	name = dickson-shinrai
+	excludesfile = ~/.config/git/ignore

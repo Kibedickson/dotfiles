@@ -5,3 +5,9 @@ node_modules
 .env
 .env.production
 MEMORY.md
+AGENTS.md
+Dockerfile.dev
+Dockerfile.dev-svc
+docker-compose.override.yml
+
+**/.claude/settings.local.json
