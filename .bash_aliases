@@ -58,3 +58,22 @@ alias ls='ls -al'
 
 alias npm='sfw npm'
 alias npx='sfw npx'
+
+dcl() {
+  declare -A services=(
+    [user]="user_service"
+    [integration]="integration_gateway"
+    [auth]="auth_service"
+    [product]="product_service"
+    [policy]="policy_service"
+    [notification]="notification_service"
+    [document]="document_service"
+  )
+
+  local args=()
+  for arg in "$@"; do
+    args+=("${services[$arg]:-$arg}")
+  done
+
+  docker compose logs -f "${args[@]}"
+}
