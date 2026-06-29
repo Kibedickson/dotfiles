@@ -21,9 +21,11 @@ export API="/Users/dickson/Workspace/11degrees/winguhr-api"
 export FRONTEND="/Users/dickson/Workspace/11degrees/winguhr-frontend"
 
 export JUBILEE_BACKEND="/Users/dickson/Workspace/shinrai/jubilee_life_portal_backend_tz"
+export j="/Users/dickson/Workspace/shinrai/jubilee_life_portal_backend_tz"
 export JUBILEE_FRONTEND="/Users/dickson/Workspace/shinrai/jubilee_life_portal_frontend_TZ/life_portal"
 
 export JUBILEE_BACKEND_KE="/Users/dickson/Workspace/shinrai/jubilee_life_portal_backend"
+export k="/Users/dickson/Workspace/shinrai/jubilee_life_portal_backend"
 export JUBILEE_FRONTEND_KE="/Users/dickson/Workspace/shinrai/jubilee_life_portal_frontend/life_portal"
 
 alias j='tmuxinator start jubilee'
