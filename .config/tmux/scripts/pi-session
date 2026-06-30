@@ -12,7 +12,7 @@ fi
 
 SESSION="pi-$PROJECT_NAME-$(echo "$WORK_DIR" | md5sum | cut -c1-8)"
 
-tmux has-session -t "$SESSION" 2>/dev/null || \
+tmux has-session -t "$SESSION" 2>/dev/null ||
   tmux new-session -d -s "$SESSION" -c "$WORK_DIR" "pi"
 
-tmux display-popup -w90% -h80% -E "tmux attach-session -t $SESSION"
+tmux display-popup -w70% -h70% -E "tmux attach-session -t $SESSION"
